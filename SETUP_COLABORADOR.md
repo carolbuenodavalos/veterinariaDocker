@@ -278,9 +278,10 @@ docker-compose down -v
 ## 📞 Suporte
 
 Se tiver problemas:
-1. Verifique se todas as modificações foram feitas
-2. Confira os logs: `docker-compose logs -f`
-3. Entre em contato com a Carol
+1. **Consulte o TROUBLESHOOTING.md** → Soluções para problemas comuns
+2. Verifique se todas as modificações foram feitas
+3. Confira os logs: `docker-compose logs -f`
+4. Entre em contato com a Carol
 
 ---
 

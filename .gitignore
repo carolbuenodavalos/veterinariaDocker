@@ -39,16 +39,7 @@ logs/
 .env
 .env.local
 
-# Certificados privados (não commitar chaves privadas!)
-certs/*.key
-certs/wildcard_rsa.key
-certs/ca.key
-certs/intermediario.key
-
-# Certificados Let's Encrypt (se usar produção)
-certbot/
-
-# Docker volumes
+# Docker volumes (apenas dados persistentes)
 frontend_dist/
 db_data/
 
