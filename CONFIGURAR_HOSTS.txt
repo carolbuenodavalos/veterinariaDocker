@@ -1,0 +1,84 @@
+# ============================================
+# CONFIGURAÇÃO DO ARQUIVO HOSTS
+# ============================================
+
+IMPORTANTE: Execute o Notepad como ADMINISTRADOR antes de editar!
+
+1. Clique com botão direito no ícone do Notepad
+2. Selecione "Executar como administrador"
+3. Abra o arquivo: C:\Windows\System32\drivers\etc\hosts
+4. Adicione as seguintes linhas NO FINAL do arquivo:
+
+# Sistema Veterinária - Desenvolvimento
+127.0.0.1    system1.local.projetomensal.com.br
+127.0.0.1    system2.local.projetomensal.com.br
+
+5. Salve o arquivo (Ctrl+S)
+6. Feche o Notepad
+
+# ============================================
+# TESTE A CONFIGURAÇÃO
+# ============================================
+
+Abra o PowerShell e execute:
+
+ping system1.local.projetomensal.com.br
+
+Deve responder do endereço 127.0.0.1
+
+# ============================================
+# ACESSAR A APLICAÇÃO
+# ============================================
+
+Sistema 1 (Animais e Tutores):
+https://system1.local.projetomensal.com.br
+
+Sistema 2 (Médicos, Vacinas e Consultas):
+https://system2.local.projetomensal.com.br
+
+# ============================================
+# ACEITAR CERTIFICADO SELF-SIGNED
+# ============================================
+
+Quando acessar via HTTPS, o navegador vai mostrar um aviso de segurança.
+
+No Chrome/Edge:
+1. Clique em "Avançado"
+2. Clique em "Ir para system1.local.projetomensal.com.br (não seguro)"
+
+No Firefox:
+1. Clique em "Avançado"
+2. Clique em "Aceitar o risco e continuar"
+
+ISSO É NORMAL em desenvolvimento com certificados self-signed!
+
+# ============================================
+# CREDENCIAIS PARA TESTE
+# ============================================
+
+Usuário ADMIN (acesso total):
+- Username: admin
+- Password: admin123
+
+Usuário Sistema 1 (Animais/Tutores):
+- Username: usuario.sistema1
+- Password: sistema1
+
+Usuário Sistema 2 (Médicos/Vacinas/Consultas):
+- Username: usuario.sistema2
+- Password: sistema2
+
+Usuário Básico (somente visualização):
+- Username: usuario.basico
+- Password: basico123
+
+# ============================================
+# PORTAS UTILIZADAS
+# ============================================
+
+- HTTP (localhost): http://localhost:4200
+- HTTPS: https://system1.local.projetomensal.com.br
+- HTTPS: https://system2.local.projetomensal.com.br
+- Keycloak Admin: http://localhost:8180
+- Backend 1 API: http://localhost:8080/api
+- MariaDB: localhost:3307

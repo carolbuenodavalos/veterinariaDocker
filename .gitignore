@@ -1,0 +1,56 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Angular
+dist/
+tmp/
+out-tsc/
+.angular/
+
+# Docker volumes e dados
+dbdata/
+veterinariaBack-master/dbdata/
+veterinariaBack-master/target/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+build/
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+
+# Certificados privados (não commitar chaves privadas!)
+certs/*.key
+certs/wildcard_rsa.key
+certs/ca.key
+certs/intermediario.key
+
+# Certificados Let's Encrypt (se usar produção)
+certbot/
+
+# Docker volumes
+frontend_dist/
+db_data/
+
+# Local leftover nested repo folder (avoid re-adding accidental submodule)
+veterinariaBack-master/

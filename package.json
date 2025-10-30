@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "sweetalert2": "^11.26.3",
+    "tsl": "^1.0.25"
+  }
+}
