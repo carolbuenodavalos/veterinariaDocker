@@ -1,0 +1,231 @@
+###############################################################################
+# Docker Compose - Projeto Mensal 4: HAProxy + Balanceamento de Carga
+# Arquitetura: HAProxy -> 2x Frontend, 4x Backend, 1x Keycloak, 1x MariaDB
+###############################################################################
+
+networks:
+  veterinaria-net:
+    driver: bridge
+
+volumes:
+  db_data:
+
+services:
+  ###############################################################################
+  # Banco de Dados - MariaDB com TLS
+  ###############################################################################
+  mariadb:
+    image: mariadb:10.6
+    container_name: veterinaria-db
+    command: >
+      bash -lc "\
+      mkdir -p /var/lib/mysql/ssl && \
+      cp /etc/ssl-projetomensal.com.br/ca.crt /var/lib/mysql/ssl/ca.crt && \
+      cp /etc/ssl-projetomensal.com.br/fullchain.pem /var/lib/mysql/ssl/fullchain.pem && \
+      cp /etc/ssl-projetomensal.com.br/wildcard_rsa.key /var/lib/mysql/ssl/wildcard_rsa.key && \
+      chown -R mysql:mysql /var/lib/mysql/ssl && \
+      chmod 600 /var/lib/mysql/ssl/wildcard_rsa.key && \
+      exec docker-entrypoint.sh mariadbd"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: veterinaria
+      MYSQL_USER: veterinaria_user
+      MYSQL_PASSWORD: veterinaria_pass
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./veterinariaBack/docker/db-init:/docker-entrypoint-initdb.d:ro
+      - ./veterinariaBack/docker/mariadb/my.cnf:/etc/mysql/conf.d/ssl.cnf:ro
+      - ./certs:/etc/ssl-projetomensal.com.br:ro
+    networks:
+      - veterinaria-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ###############################################################################
+  # Autenticação - Keycloak
+  ###############################################################################
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: veterinaria-keycloak
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: dev-file
+    volumes:
+      - ./keycloak-config:/opt/keycloak/data/import:ro
+    networks:
+      - veterinaria-net
+    restart: unless-stopped
+    # Sem healthcheck explícito para evitar falso negativo (imagem minimalista
+    # sem utilitários como curl/wget). O serviço é verificado via logs.
+
+  ###############################################################################
+  # Backend - Sistema 1 (Réplica 1)
+  ###############################################################################
+  backend1:
+    build: ./veterinariaBack
+    container_name: veterinaria-backend1
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mariadb://mariadb:3306/veterinaria_s1?sslMode=REQUIRED"
+      SPRING_DATASOURCE_USERNAME: veter_s1
+      SPRING_DATASOURCE_PASSWORD: vetS1!2025
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/veterinaria/protocol/openid-connect/certs
+      SSL_ENABLED: "false"
+      SERVER_PORT: 8080
+    networks:
+      - veterinaria-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ###############################################################################
+  # Backend - Sistema 1 (Réplica 2)
+  ###############################################################################
+  backend1_replica:
+    build: ./veterinariaBack
+    container_name: veterinaria-backend1-replica
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mariadb://mariadb:3306/veterinaria_s1?sslMode=REQUIRED"
+      SPRING_DATASOURCE_USERNAME: veter_s1
+      SPRING_DATASOURCE_PASSWORD: vetS1!2025
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/veterinaria/protocol/openid-connect/certs
+      SSL_ENABLED: "false"
+      SERVER_PORT: 8080
+    networks:
+      - veterinaria-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ###############################################################################
+  # Backend - Sistema 2 (Réplica 1)
+  ###############################################################################
+  backend2:
+    build: ./veterinariaBack
+    container_name: veterinaria-backend2
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mariadb://mariadb:3306/veterinaria_s2?sslMode=REQUIRED"
+      SPRING_DATASOURCE_USERNAME: veter_s2
+      SPRING_DATASOURCE_PASSWORD: vetS2!2025
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/veterinaria/protocol/openid-connect/certs
+      SSL_ENABLED: "false"
+      SERVER_PORT: 8080
+    networks:
+      - veterinaria-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ###############################################################################
+  # Backend - Sistema 2 (Réplica 2)
+  ###############################################################################
+  backend2_replica:
+    build: ./veterinariaBack
+    container_name: veterinaria-backend2-replica
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mariadb://mariadb:3306/veterinaria_s2?sslMode=REQUIRED"
+      SPRING_DATASOURCE_USERNAME: veter_s2
+      SPRING_DATASOURCE_PASSWORD: vetS2!2025
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/veterinaria/protocol/openid-connect/certs
+      SSL_ENABLED: "false"
+      SERVER_PORT: 8080
+    networks:
+      - veterinaria-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ###############################################################################
+  # Frontend - Angular SPA (Réplica 1)
+  ###############################################################################
+  frontend1:
+    build: ./veterinaria-master
+    container_name: veterinaria-frontend1
+    networks:
+      - veterinaria-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ###############################################################################
+  # Frontend - Angular SPA (Réplica 2)
+  ###############################################################################
+  frontend2:
+    build: ./veterinaria-master
+    container_name: veterinaria-frontend2
+    networks:
+      - veterinaria-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ###############################################################################
+  # Load Balancer - HAProxy
+  # Ponto de entrada para todas as requisições
+  ###############################################################################
+  haproxy:
+    image: haproxy:2.9-alpine
+    container_name: veterinaria-haproxy
+    depends_on:
+      frontend1:
+        condition: service_healthy
+      frontend2:
+        condition: service_healthy
+      backend1:
+        condition: service_healthy
+      backend1_replica:
+        condition: service_healthy
+      backend2:
+        condition: service_healthy
+      backend2_replica:
+        condition: service_healthy
+    ports:
+      - "80:80"        # HTTP (redireciona para HTTPS)
+      - "443:443"      # HTTPS (TLS termination)
+      - "8404:8404"    # Estatísticas do HAProxy
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./certs:/etc/ssl-projetomensal.com.br:ro
+    networks:
+      - veterinaria-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pidof haproxy || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

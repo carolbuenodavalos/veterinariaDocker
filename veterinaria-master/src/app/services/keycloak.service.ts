@@ -9,7 +9,7 @@ export class KeycloakService {
 
   async init(): Promise<boolean> {
     this.keycloak = new Keycloak({
-      url: 'http://localhost:8180',
+      url: window.location.origin + '/auth',
       realm: 'veterinaria',
       clientId: 'veterinaria-frontend'
     });
@@ -58,7 +58,7 @@ export class KeycloakService {
         
         if (!this.keycloak) {
           this.keycloak = new Keycloak({
-            url: 'http://localhost:8180',
+            url: window.location.origin + '/auth',
             realm: 'veterinaria',
             clientId: 'veterinaria-frontend'
           });
